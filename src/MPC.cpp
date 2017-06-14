@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 25;
-double dt = 0.05;
+size_t N = 10;
+double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -20,6 +20,10 @@ double dt = 0.05;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
+
+double ref_cte = 0;
+double ref_epsi = 0;
+double ref_v = 100;
 
 //Variable staring points in the one input vector with state variables and actuators
 size_t x_start = 0;
@@ -75,6 +79,30 @@ class FG_eval {
     fg[1 + v_start] = vars[v_start];
     fg[1 + cte_start] = vars[cte_start];
     fg[1 + epsi_start] = vars[epsi_start];
+
+    //Rest of the constraints
+    for(int i = 1; i < N; i++) {
+      //state at time t+1
+      AD<double> x1 = vars[x_start + i];
+      AD<double> y1 = vars[y_start + i];
+      AD<double> psi1 = vars[psi_start + i];
+      AD<double> v1 = vars[v_start + i];
+      AD<double> cte1 = vars[cte_start + i];
+      AD<double> epsi1 = vars[epsi_start + i];
+
+      //state at time t
+      AD<double> x0 = vars[x_start + i - 1];
+      AD<double> y0 = vars[y_start + i - 1];
+      AD<double> psi0 = vars[psi_start + i - 1];
+      AD<double> v0 = vars[v_start + i - 1];
+      AD<double> cte0 = vars[cte_start + i - 1];
+      AD<double> epsi0 = vars[epsi_start + i - 1];
+
+      //only consider the actuation at time t
+      AD<double> delta0 = vars[delta_start + t -1];
+      AD<double> a0 = vars[a_start + t -1];
+      
+    }
   }
 };
 

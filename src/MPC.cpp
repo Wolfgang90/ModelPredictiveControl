@@ -153,6 +153,24 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
 
+  //Set all non-actuators upper and lower limits to the maximum values
+  for(int i = 0; i < delta_start; i++) {
+    vars_lowerbound[i] = -1.0e19;
+    vars_upperbound[i] = 1.0e19;
+  }
+
+  //The upper and lower limits of delta are set to -25 and 25 degrees (values in radiants)
+  for (int i = delta_start; i < a_start; i++){
+    vars_lowerbound[i] = -0.436332*Lf;
+    vars_lowerbound[i] = 0.436332*Lf;
+  }
+
+  //Acceleration and deceleration upper and lower limits
+  for(int i = a_start; i < n_vars; i++) {
+    vars_lowerbound[i] = -1.0;
+    vars_upperbound[i] = 1.0;
+  }
+
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
   Dvector constraints_lowerbound(n_constraints);
@@ -161,6 +179,22 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     constraints_lowerbound[i] = 0;
     constraints_upperbound[i] = 0;
   }
+
+  //constraints specific for first point
+  constraints_lowerbound[x_start] = x;
+  constraints_lowerbound[y_start] = y;
+  constraints_lowerbound[psi_start] = psi;
+  constraints_lowerbound[v_start] = v;
+  constraints_lowerbound[cte_start] = cte;
+  constraints_lowerbound[epsi_start] = epsi;
+  
+  constraints_upperbound[x_start] = x;
+  constraints_upperbound[y_start] = y;
+  constraints_upperbound[psi_start] = psi;
+  constraints_upperbound[v_start] = v;
+  constraints_upperbound[cte_start] = cte;
+  constraints_upperbound[epsi_start] = epsi;
+
 
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);

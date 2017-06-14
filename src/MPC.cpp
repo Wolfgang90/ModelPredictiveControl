@@ -48,9 +48,23 @@ class FG_eval {
     //Cost is going to be stored in the first element of fg
     fg[0] = 0.0;
 
-    //Costs based on current state
+    //Costs for derivation from current state
     for(int i = 0; i < N; i++) {
-      fg[0] += CppAD::pow()
+      fg[0] += CppAD::pow(vars[cte_start + t],2);
+      fg[0] += CppAD::pow(vars[epsi_start + t],2);
+      fg[0] += CppAD::pow(vars[v_start + t] - v_ref,2);
+    }
+
+    //Costs for strong actuators
+    for(int i = 0; i < N - 1; i++) {
+      fg[0] += CppAD::pow(vars[delta_start + t],2);
+      fg[0] += CppAD::pow(vars[a_start + t],2);
+    }
+
+    //Costs for strong changes in actuators
+    for(int i = 0; i < N - 2; i++) {
+      fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
   }
 };

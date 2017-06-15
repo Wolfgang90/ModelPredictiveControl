@@ -21,9 +21,9 @@ double dt = 0.1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-double ref_cte = 0;
-double ref_epsi = 0;
-double ref_v = 100;
+const double ref_cte = 0;
+const double ref_epsi = 0;
+const double ref_v = 100;
 
 //Variable staring points in the one input vector with state variables and actuators
 size_t x_start = 0;
@@ -56,7 +56,7 @@ class FG_eval {
     for(int i = 0; i < N; i++) {
       fg[0] += CppAD::pow(vars[cte_start + i],2);
       fg[0] += CppAD::pow(vars[epsi_start + i],2);
-      fg[0] += CppAD::pow(vars[v_start + i] - v_ref,2);
+      fg[0] += CppAD::pow(vars[v_start + i] - ref_v,2);
     }
 
     //Costs for strong actuators
@@ -67,8 +67,8 @@ class FG_eval {
 
     //Costs for strong changes in actuators
     for(int i = 0; i < N - 2; i++) {
-      fg[0] += CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + t], 2);
+      fg[0] += CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+      fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
     }
 
     //Constraints
@@ -107,7 +107,7 @@ class FG_eval {
 
       fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
       fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
-      fg[2 + psi_start + i] = psi1 - (psi0 - v0 * delta0 / LF * dt);
+      fg[2 + psi_start + i] = psi1 - (psi0 - v0 * delta0 / Lf * dt);
       fg[2 + v_start + i] = v1 - (v0 + a0 * dt);
       fg[2 + cte_start + i] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
       fg[2 + epsi_start + i] = epsi1 - ((psi0 - psides0) - v0 * delta0 / Lf * dt);
@@ -243,8 +243,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   result.push_back(solution.x[a_start]);
   
   for(int i = 0; i < N-1; i++) {
-    result.push_back(solution.x[x_start + i + 1])
-    result.push_back(solution.x[y_start + i + 1])
+    result.push_back(solution.x[x_start + i + 1]);
+    result.push_back(solution.x[y_start + i + 1]);
   }
 
 

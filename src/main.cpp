@@ -96,6 +96,9 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double steer_value = j[1]["steering_angle"];
+          double throttle_value = j[1]["throttle"];
+
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -109,8 +112,8 @@ int main() {
             double shift_x = ptsx[i] - px;
             double shift_y = ptsy[i] - py;
 
-            ptsx[i] = (shift_x * cos(0 - psi) - shift_y * sin(0 - psi);
-            ptsy[i] = (shift_x * sin(0 - psi) - shift_y * cos(0 - psi);
+            ptsx[i] = (shift_x * cos(0 - psi) - shift_y * sin(0 - psi));
+            ptsy[i] = (shift_x * sin(0 - psi) - shift_y * cos(0 - psi));
           }
           
           double* ptrx = &ptsx[0];
@@ -124,8 +127,8 @@ int main() {
           //calculate state considering latency
           double x_projected = v * latency;
           double y_projected = 0;
-          double psi_projected = -v * steering_angle / Lf * latency;
-          double v_projected = v + throttle * latency;
+          double psi_projected = -v * steer_value / Lf * latency;
+          double v_projected = v + throttle_value * latency;
 
 
           //calculate cte and epsi
@@ -134,13 +137,34 @@ int main() {
           //can be simplified due to normalization around 0 as performed before to:
           double epsi = -atan(coeffs[1]);
 
-          double steer_value = j[1]["steering_angle"];
-          double throttle_value = j[1]["throttle"];
-
           Eigen::VectorXd state(6);
           state << x_projected, y_projected, psi_projected, v_projected, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
+
+
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+
+          double poly_inc = 2.5;
+          int num_points = 25;
+          for(int i = 1; i < num_points; i++) {
+            next_x_vals.push_back(poly_inc*i);
+            next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
+          }
+
+
+          vector<double> mpc_x_vals;
+          vector<double> mpc_y_vals;
+          for(int i = 2; i < vars.size(); i++) {
+            if(i%2 == 0) {
+              mpc_x_vals.push_back(vars[i]);
+            } else {
+              mpc_y_vals.push_back(vars[i]);
+            }
+          }
+
+         
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.

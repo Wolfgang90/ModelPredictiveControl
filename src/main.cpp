@@ -11,7 +11,7 @@
 
 
 //relevant simulator related constants
-const double Lf = 2.67;
+const double Lf = 2.67; //Distance between front axis and turning point of the car
 const double latency = 0.1; //0.1s of actuator latency
 
 // for convenience
@@ -130,12 +130,11 @@ int main() {
 
           auto coeffs = polyfit(ptsx_car_fitted, ptsy_car_fitted, 3);
 
-          //calculate state considering latency
+          // 3.0 Calculate current state taking into account simulator latency
           double x_projected = v * latency;
           double y_projected = 0;
           double psi_projected = -v * steer_value / Lf * latency;
           double v_projected = v + throttle_value * latency;
-
 
           //calculate cte and epsi
           double cte = polyeval(coeffs, 0);
@@ -146,22 +145,10 @@ int main() {
           Eigen::VectorXd state(6);
           state << x_projected, y_projected, psi_projected, v_projected, cte, epsi;
 
+          // 4.0 Make prediction for next state
           auto vars = mpc.Solve(state, coeffs);
 
           std::cout << "main.cpp - mpc solver performed" << endl;
-
-
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-
-          double poly_inc = 2.5;
-          int num_points = 25;
-          for(int i = 1; i < num_points; i++) {
-            next_x_vals.push_back(poly_inc*i);
-            next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
-          }
-
-          std::cout << "main.cpp - Checkpoint 3" << endl;
 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
@@ -192,8 +179,11 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
+          //msgJson["next_x"] = next_x_vals;
+          //msgJson["next_y"] = next_y_vals;
+          msgJson["next_x"] = ptsx_car;
+          msgJson["next_y"] = ptsy_car;
+
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";

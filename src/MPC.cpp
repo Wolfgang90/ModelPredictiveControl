@@ -20,7 +20,6 @@ double dt = 0.1;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
-
 const double ref_cte = 0;
 const double ref_epsi = 0;
 const double ref_v = 100;
@@ -54,21 +53,21 @@ class FG_eval {
 
     //Costs for derivation from current state
     for(int i = 0; i < N; i++) {
-      fg[0] += CppAD::pow(vars[cte_start + i],2);
-      fg[0] += CppAD::pow(vars[epsi_start + i],2);
+      fg[0] += 2000 * CppAD::pow(vars[cte_start + i],2);
+      fg[0] += 2000 * CppAD::pow(vars[epsi_start + i],2);
       fg[0] += CppAD::pow(vars[v_start + i] - ref_v,2);
     }
 
     //Costs for strong actuators
     for(int i = 0; i < N - 1; i++) {
-      fg[0] += CppAD::pow(vars[delta_start + i],2);
-      fg[0] += CppAD::pow(vars[a_start + i],2);
+      fg[0] += 5 * CppAD::pow(vars[delta_start + i],2);
+      fg[0] += 5 * CppAD::pow(vars[a_start + i],2);
     }
 
     //Costs for strong changes in actuators
     for(int i = 0; i < N - 2; i++) {
-      fg[0] += CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-      fg[0] += CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+      fg[0] += 200 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+      fg[0] += 10 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
     }
 
     //Constraints
@@ -134,14 +133,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double epsi = state[5];
   int state_size = state.size();
 
-
-
-  std::cout << "x: " << x << endl;
-  std::cout << "y: " << y << endl;
-  std::cout << "psi: " << psi << endl;
-  std::cout << "v: " << v << endl;
-  std::cout << "cte: " << cte << endl;
-  std::cout << "epsi: " << epsi << endl;
+  std::cout << "state(size):" << state.size() << endl;
 
 
   // TODO: Set the number of model variables (includes both states and inputs).
@@ -163,24 +155,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars[i] = 0;
   }
   
-  //Set initial values for variables
-  vars[x_start] = x;
-  vars[y_start] = y;
-  vars[psi_start] = psi;
-  vars[v_start] = v;
-  vars[cte_start] = cte;
-  vars[epsi_start] = epsi;
-
-  std::cout << "vars.size(): " << vars.size() << endl;
-  std::cout << "x_start: " << x_start << endl;
-  std::cout << "y_start: " << y_start << endl;
-  std::cout << "psi_start: " << psi_start << endl;
-  std::cout << "v_start: " << v_start << endl;
-  std::cout << "cte_start: " << cte_start << endl;
-  std::cout << "epsi_start: " << epsi_start << endl;
-
-
-
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
@@ -199,15 +173,12 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 0.436332*Lf;
   }
   
-  std::cout << "MPC.cpp - Solve() - Checkpoint 3" << endl;
-
   //Acceleration and deceleration upper and lower limits
   for(int i = a_start; i < n_vars; i++) {
     vars_lowerbound[i] = -1.0;
     vars_upperbound[i] = 1.0;
   }
 
-  std::cout << "MPC.cpp - Solve() - Checkpoint 4" << endl;
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
   Dvector constraints_lowerbound(n_constraints);
@@ -257,13 +228,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;
 
-  std::cout << "options -> " << options << endl; 
-  std::cout << "vars -> " << vars << endl; 
-  std::cout << "vars_lowerbound -> " << vars_lowerbound << endl; 
-  std::cout << "vars_upperbound -> " << vars_upperbound << endl; 
-  std::cout << "constraints_lowerbound -> " << constraints_lowerbound << endl; 
-  std::cout << "constraints_upperbound -> " << constraints_upperbound << endl; 
-
   // solve the problem
   CppAD::ipopt::solve<Dvector, FG_eval>(
       options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
@@ -274,7 +238,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // Cost
   auto cost = solution.obj_value;
-  std::cout << "Cost " << cost << std::endl;
+  //std::cout << "Cost " << cost << std::endl;
 
   // TODO: Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
@@ -283,22 +247,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // creates a 2 element double vector.
 
   vector<double> result;
-  std::cout << "MPC.cpp - Solve() - Checkpoint 5.5.1" << endl;
-  std::cout << solution.x << endl;
   result.push_back(solution.x[delta_start]);
-  std::cout << "MPC.cpp - Solve() - Checkpoint 5.5.2" << endl;
   result.push_back(solution.x[a_start]);
-  std::cout << "MPC.cpp - Solve() - Checkpoint 5.5.3" << endl;
-
-  std::cout << "MPC.cpp - Solve() - Checkpoint 5.6" << endl;
   
   for(int i = 0; i < N-1; i++) {
     result.push_back(solution.x[x_start + i + 1]);
     result.push_back(solution.x[y_start + i + 1]);
   }
   
-  std::cout << "MPC.cpp - Solve() - Checkpoint 6" << endl;
-
-
   return result;
 }

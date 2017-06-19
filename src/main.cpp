@@ -108,24 +108,28 @@ int main() {
           
           std::cout << "main.cpp - Checkpoint 1" << endl;
 
+          // 1.0 Transform desired track coordinates (ptsx and ptsy)
+          // from global map coordinate system
+          // to local car coordinates
+
+          vector<double> ptsx_car;
+          vector<double> ptsy_car;
           for (int i = 0; i < ptsx.size(); i++) {
 
             //shift the car's reference angle to 90 degrees
             double shift_x = ptsx[i] - px;
             double shift_y = ptsy[i] - py;
 
-            ptsx[i] = shift_x * cos(0 - psi) - shift_y * sin(0 - psi);
-            ptsy[i] = shift_x * sin(0 - psi) - shift_y * cos(0 - psi);
+            ptsx_car.push_back(shift_x * cos(psi) + shift_y * sin(psi));
+            ptsy_car.push_back(shift_y * sin(psi) + shift_y * cos(psi));
           }
 
-          
-          double* ptrx = &ptsx[0];
-          Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);
+          // 2.0 Fit desired track coorinates in local car coordinates
+          // to 3rd order polynomial
+          Eigen::VectorXd ptsx_car_fitted = Eigen::VectorXd::Map(ptsx_car.data(), ptsx_car.size());
+          Eigen::VectorXd ptsy_car_fitted = Eigen::VectorXd::Map(ptsy_car.data(), ptsy_car.size());
 
-          double* ptry = &ptsy[0];
-          Eigen::Map<Eigen::VectorXd> ptsy_transform(ptrx, 6);
-
-          auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
+          auto coeffs = polyfit(ptsx_car_fitted, ptsy_car_fitted, 3);
 
           //calculate state considering latency
           double x_projected = v * latency;

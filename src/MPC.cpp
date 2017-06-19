@@ -133,9 +133,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double epsi = state[5];
   int state_size = state.size();
 
-  std::cout << "state(size):" << state.size() << endl;
-
-
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
   // element vector and there are 10 timesteps. The number of variables is:
@@ -145,8 +142,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t n_vars = N * state_size + (N - 1) * 2;
   // TODO: Set the number of constraints
   size_t n_constraints = N * state_size;
-
-  std::cout << "n_vars: " << n_vars << endl;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -165,8 +160,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 1.0e19;
   }
   
-  std::cout << "MPC.cpp - Solve() - Checkpoint 2" << endl;
-
   //The upper and lower limits of delta are set to -25 and 25 degrees (values in radiants)
   for (int i = delta_start; i < a_start; i++){
     vars_lowerbound[i] = -0.436332*Lf;

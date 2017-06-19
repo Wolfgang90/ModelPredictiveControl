@@ -128,7 +128,7 @@ int main() {
           Eigen::VectorXd ptsx_car_fitted = Eigen::VectorXd::Map(ptsx_car.data(), ptsx_car.size());
           Eigen::VectorXd ptsy_car_fitted = Eigen::VectorXd::Map(ptsy_car.data(), ptsy_car.size());
 
-          auto coeffs = polyfit(ptsx_car_fitted, ptsy_car_fitted, 3);
+          Eigen::VectorXd coeffs = polyfit(ptsx_car_fitted, ptsy_car_fitted, 3);
 
           // 3.0 Calculate current state taking into account simulator latency
           double x_projected = v * latency;
@@ -148,7 +148,6 @@ int main() {
           // 4.0 Make prediction for next state
           auto vars = mpc.Solve(state, coeffs);
 
-          std::cout << "main.cpp - mpc solver performed" << endl;
 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
@@ -160,13 +159,12 @@ int main() {
             }
           }
           
-          std::cout << "main.cpp - Checkpoint 4" << endl;
          
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = vars[0]/deg2rad(25);
+          msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
           msgJson["throttle"] = vars[1];
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system

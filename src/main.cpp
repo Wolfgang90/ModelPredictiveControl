@@ -99,22 +99,25 @@ int main() {
           double steer_value = j[1]["steering_angle"];
           double throttle_value = j[1]["throttle"];
 
-
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
+          
+          std::cout << "main.cpp - Checkpoint 1" << endl;
 
           for (int i = 0; i < ptsx.size(); i++) {
+
             //shift the car's reference angle to 90 degrees
             double shift_x = ptsx[i] - px;
             double shift_y = ptsy[i] - py;
 
-            ptsx[i] = (shift_x * cos(0 - psi) - shift_y * sin(0 - psi));
-            ptsy[i] = (shift_x * sin(0 - psi) - shift_y * cos(0 - psi));
+            ptsx[i] = shift_x * cos(0 - psi) - shift_y * sin(0 - psi);
+            ptsy[i] = shift_x * sin(0 - psi) - shift_y * cos(0 - psi);
           }
+
           
           double* ptrx = &ptsx[0];
           Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);
@@ -142,6 +145,8 @@ int main() {
 
           auto vars = mpc.Solve(state, coeffs);
 
+          std::cout << "main.cpp - mpc solver performed" << endl;
+
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
@@ -153,6 +158,7 @@ int main() {
             next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
           }
 
+          std::cout << "main.cpp - Checkpoint 3" << endl;
 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
@@ -163,7 +169,8 @@ int main() {
               mpc_y_vals.push_back(vars[i]);
             }
           }
-
+          
+          std::cout << "main.cpp - Checkpoint 4" << endl;
          
 
           json msgJson;

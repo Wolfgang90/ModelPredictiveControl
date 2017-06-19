@@ -132,15 +132,29 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double v = state[3];
   double cte = state[4];
   double epsi = state[5];
+  int state_size = state.size();
+
+
+
+  std::cout << "x: " << x << endl;
+  std::cout << "y: " << y << endl;
+  std::cout << "psi: " << psi << endl;
+  std::cout << "v: " << v << endl;
+  std::cout << "cte: " << cte << endl;
+  std::cout << "epsi: " << epsi << endl;
+
 
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
   // element vector and there are 10 timesteps. The number of variables is:
   //
   // 4 * 10 + 2 * 9
-  size_t n_vars = N * 6 + (N - 1) * 2;
+
+  size_t n_vars = N * state_size + (N - 1) * 2;
   // TODO: Set the number of constraints
-  size_t n_constraints = N * 6;
+  size_t n_constraints = N * state_size;
+
+  std::cout << "n_vars: " << n_vars << endl;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -148,6 +162,24 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   for (int i = 0; i < n_vars; i++) {
     vars[i] = 0;
   }
+  
+  //Set initial values for variables
+  vars[x_start] = x;
+  vars[y_start] = y;
+  vars[psi_start] = psi;
+  vars[v_start] = v;
+  vars[cte_start] = cte;
+  vars[epsi_start] = epsi;
+
+  std::cout << "vars.size(): " << vars.size() << endl;
+  std::cout << "x_start: " << x_start << endl;
+  std::cout << "y_start: " << y_start << endl;
+  std::cout << "psi_start: " << psi_start << endl;
+  std::cout << "v_start: " << v_start << endl;
+  std::cout << "cte_start: " << cte_start << endl;
+  std::cout << "epsi_start: " << epsi_start << endl;
+
+
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
@@ -158,12 +190,16 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_lowerbound[i] = -1.0e19;
     vars_upperbound[i] = 1.0e19;
   }
+  
+  std::cout << "MPC.cpp - Solve() - Checkpoint 2" << endl;
 
   //The upper and lower limits of delta are set to -25 and 25 degrees (values in radiants)
   for (int i = delta_start; i < a_start; i++){
     vars_lowerbound[i] = -0.436332*Lf;
-    vars_lowerbound[i] = 0.436332*Lf;
+    vars_upperbound[i] = 0.436332*Lf;
   }
+  
+  std::cout << "MPC.cpp - Solve() - Checkpoint 3" << endl;
 
   //Acceleration and deceleration upper and lower limits
   for(int i = a_start; i < n_vars; i++) {
@@ -171,6 +207,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 1.0;
   }
 
+  std::cout << "MPC.cpp - Solve() - Checkpoint 4" << endl;
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
   Dvector constraints_lowerbound(n_constraints);
@@ -179,6 +216,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     constraints_lowerbound[i] = 0;
     constraints_upperbound[i] = 0;
   }
+
 
   //constraints specific for first point
   constraints_lowerbound[x_start] = x;
@@ -194,7 +232,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   constraints_upperbound[v_start] = v;
   constraints_upperbound[cte_start] = cte;
   constraints_upperbound[epsi_start] = epsi;
-
 
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
@@ -220,6 +257,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;
 
+  std::cout << "options -> " << options << endl; 
+  std::cout << "vars -> " << vars << endl; 
+  std::cout << "vars_lowerbound -> " << vars_lowerbound << endl; 
+  std::cout << "vars_upperbound -> " << vars_upperbound << endl; 
+  std::cout << "constraints_lowerbound -> " << constraints_lowerbound << endl; 
+  std::cout << "constraints_upperbound -> " << constraints_upperbound << endl; 
+
   // solve the problem
   CppAD::ipopt::solve<Dvector, FG_eval>(
       options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
@@ -239,13 +283,21 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // creates a 2 element double vector.
 
   vector<double> result;
+  std::cout << "MPC.cpp - Solve() - Checkpoint 5.5.1" << endl;
+  std::cout << solution.x << endl;
   result.push_back(solution.x[delta_start]);
+  std::cout << "MPC.cpp - Solve() - Checkpoint 5.5.2" << endl;
   result.push_back(solution.x[a_start]);
+  std::cout << "MPC.cpp - Solve() - Checkpoint 5.5.3" << endl;
+
+  std::cout << "MPC.cpp - Solve() - Checkpoint 5.6" << endl;
   
   for(int i = 0; i < N-1; i++) {
     result.push_back(solution.x[x_start + i + 1]);
     result.push_back(solution.x[y_start + i + 1]);
   }
+  
+  std::cout << "MPC.cpp - Solve() - Checkpoint 6" << endl;
 
 
   return result;

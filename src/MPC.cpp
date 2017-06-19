@@ -43,11 +43,7 @@ class FG_eval {
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
-    // TODO: implement MPC
     // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
-
     //Cost is going to be stored in the first element of fg
     fg[0] = 0.0;
 
@@ -114,9 +110,9 @@ class FG_eval {
   }
 };
 
-//
-// MPC class definition implementation.
-//
+/*
+MPC class definition implementation.
+*/
 MPC::MPC() {}
 MPC::~MPC() {}
 

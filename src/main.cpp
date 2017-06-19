@@ -71,11 +71,13 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
 }
 
 int main() {
-  uWS::Hub h;
+  // 1.0 Initialize MPC-instance and establish communication with simulator
 
   // MPC is initialized here!
   MPC mpc;
 
+  // Initializes communication with simulator
+  uWS::Hub h;
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -88,7 +90,11 @@ int main() {
       if (s != "") {
         auto j = json::parse(s);
         string event = j[0].get<string>();
+
+        // 2.0 Process input values from simulator
         if (event == "telemetry") {
+          
+          // 2.1 Operationalize values received from simulator
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
@@ -99,14 +105,7 @@ int main() {
           double steer_value = j[1]["steering_angle"];
           double throttle_value = j[1]["throttle"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          
-          // 1.0 Transform desired track coordinates (ptsx and ptsy)
+          // 2.2 Transform desired track coordinates (ptsx and ptsy)
           // from global map coordinate system
           // to local car coordinates
 
@@ -123,14 +122,14 @@ int main() {
             ptsy_car.push_back(shift_x * sin(0 - psi) + shift_y * cos(0 - psi));
           }
 
-          // 2.0 Fit desired track coorinates in local car coordinates
+          // 2.3 Fit desired track coordinates in local car coordinates
           // to 3rd order polynomial
           Eigen::VectorXd ptsx_car_fitted = Eigen::VectorXd::Map(ptsx_car.data(), ptsx_car.size());
           Eigen::VectorXd ptsy_car_fitted = Eigen::VectorXd::Map(ptsy_car.data(), ptsy_car.size());
 
           Eigen::VectorXd coeffs = polyfit(ptsx_car_fitted, ptsy_car_fitted, 3);
 
-          // 3.0 Calculate current state taking into account simulator latency
+          // 2.4 Calculate current state taking into account simulator latency
           double x_projected = v * latency;
           double y_projected = 0;
           double psi_projected = -v * steer_value / Lf * latency;
@@ -145,9 +144,8 @@ int main() {
           Eigen::VectorXd state(6);
           state << x_projected, y_projected, psi_projected, v_projected, cte, epsi;
 
-          // 4.0 Make prediction for next state
+          // 2.5 Make prediction for the upcoming states
           auto vars = mpc.Solve(state, coeffs);
-
 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
@@ -158,9 +156,9 @@ int main() {
               mpc_y_vals.push_back(vars[i]);
             }
           }
-          
          
 
+          // 3.0 Determine actuator output and send results to simulator
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -176,9 +174,6 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-
-          //msgJson["next_x"] = next_x_vals;
-          //msgJson["next_y"] = next_y_vals;
           msgJson["next_x"] = ptsx_car;
           msgJson["next_y"] = ptsy_car;
 

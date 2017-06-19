@@ -106,22 +106,21 @@ int main() {
           *
           */
           
-          std::cout << "main.cpp - Checkpoint 1" << endl;
-
           // 1.0 Transform desired track coordinates (ptsx and ptsy)
           // from global map coordinate system
           // to local car coordinates
 
           vector<double> ptsx_car;
           vector<double> ptsy_car;
+
           for (int i = 0; i < ptsx.size(); i++) {
 
             //shift the car's reference angle to 90 degrees
             double shift_x = ptsx[i] - px;
             double shift_y = ptsy[i] - py;
 
-            ptsx_car.push_back(shift_x * cos(psi) + shift_y * sin(psi));
-            ptsy_car.push_back(shift_y * sin(psi) + shift_y * cos(psi));
+            ptsx_car.push_back(shift_x * cos(0 - psi) - shift_y * sin(0 - psi));
+            ptsy_car.push_back(shift_x * sin(0 - psi) + shift_y * cos(0 - psi));
           }
 
           // 2.0 Fit desired track coorinates in local car coordinates
